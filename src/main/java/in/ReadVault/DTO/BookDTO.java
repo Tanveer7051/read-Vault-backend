@@ -19,4 +19,5 @@ public class BookDTO {
     private BookType bookType;
     private int totalCopies;
     private int availableCopies;
+    private String imgUrl;
 }

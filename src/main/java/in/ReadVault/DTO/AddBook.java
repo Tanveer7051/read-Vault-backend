@@ -24,7 +24,7 @@ public class AddBook {
     private Category category;
 
     @NotBlank(message = "Description is required")
-    @Size(min = 10, max = 500, message = "Description must be between 10 to 500 characters")
+    @Size(min = 10, max = 300, message = "Description must be between 10 to 300 characters")
     private String description;
 
     @NotNull(message = "Book type is required")
