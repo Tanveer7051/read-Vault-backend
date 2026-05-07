@@ -30,6 +30,8 @@ public class User implements UserDetails {
     @Column(unique = true)
     private String username;
 
+    private String profileImage;
+    private String profileImagePublicId;
     @Enumerated(EnumType.STRING)
     private Role role = Role.USER;
 
