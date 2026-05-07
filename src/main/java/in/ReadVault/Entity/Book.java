@@ -21,10 +21,12 @@ public class Book {
     @Enumerated(EnumType.STRING)
     private Category category=Category.LITERATURE;
     private String pdfurl;
+    private  String pdfPublicId;
     private String description;
     private int totalCopies;
     private int availableCopies;
     private String imgUrl;
+    private String imagePublicId;
     @Enumerated(EnumType.STRING)
     private BookType bookType;
     @JsonManagedReference(value = "book-reservation")
