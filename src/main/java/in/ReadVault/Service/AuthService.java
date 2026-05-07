@@ -12,6 +12,7 @@ import in.ReadVault.Repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -99,7 +100,8 @@ public class AuthService {
 
     public ResponseLoginDTO login(LoginRequestDTO loginRequestDTO) {
 
-        User user = userRepository.findByEmail(loginRequestDTO.getEmail())
+        User user = userRepository.findByEmail(
+                        loginRequestDTO.getEmail())
                 .orElseThrow(() ->
                         new UserNotFoundException(
                                 "User not found with this email "
@@ -107,22 +109,35 @@ public class AuthService {
                         )
                 );
 
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        loginRequestDTO.getEmail(),
-                        loginRequestDTO.getPassword()
-                )
-        );
+        try {
 
-        User loginUser = (User) authentication.getPrincipal();
+            Authentication authentication =
+                    authenticationManager.authenticate(
+                            new UsernamePasswordAuthenticationToken(
+                                    loginRequestDTO.getEmail(),
+                                    loginRequestDTO.getPassword()
+                            )
+                    );
 
-        String accessToken =
-                jwtTokenService.generateAccessToken(loginUser);
+            User loginUser =
+                    (User) authentication.getPrincipal();
 
-        String refreshToken =
-                jwtTokenService.generateRefreshToken(loginUser);
+            String accessToken =
+                    jwtTokenService.generateAccessToken(loginUser);
 
-        return new ResponseLoginDTO(accessToken, refreshToken);
+            String refreshToken =
+                    jwtTokenService.generateRefreshToken(loginUser);
+
+            return new ResponseLoginDTO(
+                    accessToken,
+                    refreshToken
+            );
+
+        } catch (BadCredentialsException e) {
+
+            throw new BadRequestExceptions(
+                    "Wrong Password");
+        }
     }
 
     public ResponseLoginDTO refresh(String refreshToken) {
