@@ -34,13 +34,26 @@ public class BorrowRecordsController {
     }
 
     @PutMapping("/return/{borrowId}")
-    public ResponseEntity<Map<String, Object>> returnBook(@PathVariable Long borrowId, Authentication authentication) {
+    public ResponseEntity<Map<String, Object>> returnBook(
+            @PathVariable Long borrowId,
+            Authentication authentication) {
 
-        Long userId = getUserId(authentication);
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(auth -> auth.getAuthority().equals("ROLE_ADMIN"));
 
-        borrowRecordsService.returnBook(userId, borrowId);
+        if (isAdmin) {
+            borrowRecordsService.adminReturnBook(borrowId);
+        } else {
+            Long userId = getUserId(authentication);
+            borrowRecordsService.returnBook(userId, borrowId);
+        }
 
-        return ResponseEntity.ok(Map.of("message", "Book returned successfully", "timeStamp", LocalDate.now()));
+        return ResponseEntity.ok(
+                Map.of(
+                        "message", "Book returned successfully",
+                        "timeStamp", LocalDate.now()
+                )
+        );
     }
 
     @PostMapping("/digital/{bookId}")
