@@ -33,12 +33,18 @@ public class BooksSevice {
     public BookDTO addBook(AddBook addBook, MultipartFile pdfFile, MultipartFile imgUrl) {
 
         try {
+
             if (addBook.getBookType() == null) {
                 throw new BookNotFoundException("Book type is required");
             }
 
-            String title = addBook.getTitle().trim().toUpperCase();
-            String author = addBook.getAuthor().trim().toUpperCase();
+            String title = addBook.getTitle() == null
+                    ? null
+                    : addBook.getTitle().trim().toUpperCase();
+
+            String author = addBook.getAuthor() == null
+                    ? null
+                    : addBook.getAuthor().trim().toUpperCase();
 
             if (bookRepository.findByTitleAndAuthor(title, author).isPresent()) {
                 throw new BookAlreadyExistException(
@@ -46,31 +52,37 @@ public class BooksSevice {
                 );
             }
 
+            // Validate image
             if (imgUrl == null || imgUrl.isEmpty()) {
                 throw new BadRequestExceptions("Book image is required");
             }
 
-            if (!imgUrl.getContentType().startsWith("image/")) {
+            if (imgUrl.getContentType() == null ||
+                    !imgUrl.getContentType().startsWith("image/")) {
+
                 throw new BadRequestExceptions("Only image files are allowed");
             }
 
+            // Upload image
             Map<String, Object> imageUpload = cloudinary.uploader().upload(
                     imgUrl.getBytes(),
                     Map.of("resource_type", "image")
             );
 
             String imageUrl = imageUpload.get("secure_url").toString();
-            String publicImgUrl=imageUpload.get("public_id").toString();
+            String publicImgUrl = imageUpload.get("public_id").toString();
 
             Book book = new Book();
+
             book.setTitle(title);
             book.setAuthor(author);
             book.setCategory(addBook.getCategory());
             book.setDescription(addBook.getDescription());
+
             book.setImgUrl(imageUrl);
             book.setImagePublicId(publicImgUrl);
 
-
+            // DIGITAL BOOK
             if (addBook.getBookType() == BookType.DIGITAL) {
 
                 if (addBook.getTotalCopies() > 0) {
@@ -80,31 +92,44 @@ public class BooksSevice {
                 }
 
                 if (pdfFile == null || pdfFile.isEmpty()) {
-                    throw new BadRequestExceptions("PDF file is required for digital book");
+                    throw new BadRequestExceptions(
+                            "PDF file is required for digital book"
+                    );
                 }
 
-                if (!pdfFile.getContentType().equals("application/pdf")) {
-                    throw new BadRequestExceptions("Only PDF files are allowed");
+                if (pdfFile.getContentType() == null ||
+                        !pdfFile.getContentType().equals("application/pdf")) {
+
+                    throw new BadRequestExceptions(
+                            "Only PDF files are allowed"
+                    );
                 }
 
+                // Upload PDF
                 Map<String, Object> pdfUpload = cloudinary.uploader().upload(
                         pdfFile.getBytes(),
                         Map.of("resource_type", "raw")
                 );
 
                 String pdfUrl = pdfUpload.get("secure_url").toString();
-                String publicPdfUrl=pdfUpload.get("public_id").toString();
+                String publicPdfUrl = pdfUpload.get("public_id").toString();
 
                 book.setBookType(BookType.DIGITAL);
-                book.setPdfPublicId(publicPdfUrl);
                 book.setPdfurl(pdfUrl);
+                book.setPdfPublicId(publicPdfUrl);
+
+                // Digital books don't use copies
+                book.setTotalCopies(0);
+                book.setAvailableCopies(0);
             }
 
-
+            // PHYSICAL BOOK
             else if (addBook.getBookType() == BookType.PHYSICAL) {
 
                 if (addBook.getTotalCopies() <= 0) {
-                    throw new BadRequestExceptions("Total copies must be greater than zero");
+                    throw new BadRequestExceptions(
+                            "Total copies must be greater than zero"
+                    );
                 }
 
                 if (pdfFile != null && !pdfFile.isEmpty()) {
@@ -114,6 +139,7 @@ public class BooksSevice {
                 }
 
                 book.setBookType(BookType.PHYSICAL);
+
                 book.setTotalCopies(addBook.getTotalCopies());
                 book.setAvailableCopies(addBook.getTotalCopies());
             }
@@ -121,11 +147,13 @@ public class BooksSevice {
             Book savedBook = bookRepository.save(book);
 
             BookDTO dto = new BookDTO();
+
             dto.setId(savedBook.getId());
             dto.setTitle(savedBook.getTitle());
             dto.setAuthor(savedBook.getAuthor());
             dto.setCategory(savedBook.getCategory());
             dto.setDescription(savedBook.getDescription());
+
             dto.setAvailableCopies(savedBook.getAvailableCopies());
             dto.setTotalCopies(savedBook.getTotalCopies());
 
@@ -135,12 +163,16 @@ public class BooksSevice {
                  DigitalBookDoesNotHaveCopiesException |
                  PhysicalBookDoesNotHaveDigitalFile |
                  BadRequestExceptions e) {
+
             throw e;
+
         } catch (Exception e) {
-            throw new RuntimeException("Error while adding book: " + e.getMessage());
+
+            throw new RuntimeException(
+                    "Error while adding book: " + e.getMessage()
+            );
         }
     }
-
     public List<BookDTO> getAll() {
         List<Book> books = bookRepository.findAll();
         return books.stream()

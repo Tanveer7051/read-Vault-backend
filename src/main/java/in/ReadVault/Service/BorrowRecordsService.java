@@ -110,21 +110,35 @@ public class BorrowRecordsService {
             throw new UsePhysicalApiException("Use physical API for physical books");
         }
 
-        long count = borrowRecordsRepository.countByUserIdAndBookIdAndStatus(userId, bookId, BorrowStatus.ACTIVE);
+        // 1. Check if an ACTIVE record already exists for this book & user
+        List<BorrowRecords> activeRecords = borrowRecordsRepository
+                .findByUserIdAndBookIdAndStatus(userId, bookId, BorrowStatus.ACTIVE);
 
-        BorrowRecords record = new BorrowRecords();
-        record.setUser(user);
-        record.setBook(book);
-        record.setIssueDate(LocalDate.now());
-        record.setDigitalExpiry(LocalDate.now().plusMonths(1));
-        record.setType(BorrowType.DIGITAL);
-        record.setStatus(BorrowStatus.ACTIVE);
-        record.setRenewalCount((int) (count + 1));
-        record.setCreatedAt(LocalDate.now());
+        BorrowRecords record;
 
-        BorrowRecords saved = borrowRecordsRepository.save(record);
+        if (!activeRecords.isEmpty()) {
+            // 2. If it exists, extend the expiry date instead of creating a new row
+            record = activeRecords.get(0);
+            record.setDigitalExpiry(LocalDate.now().plusMonths(1));
+            record.setRenewalCount(record.getRenewalCount() + 1);
 
-        return modelMapper.map(saved, BorrowRecordDTO.class);
+            record = borrowRecordsRepository.save(record);
+        } else {
+            // 3. Create a brand new record if none exists
+            record = new BorrowRecords();
+            record.setUser(user);
+            record.setBook(book);
+            record.setIssueDate(LocalDate.now());
+            record.setDigitalExpiry(LocalDate.now().plusMonths(1));
+            record.setType(BorrowType.DIGITAL);
+            record.setStatus(BorrowStatus.ACTIVE);
+            record.setRenewalCount(1);
+            record.setCreatedAt(LocalDate.now());
+
+            record = borrowRecordsRepository.save(record);
+        }
+
+        return modelMapper.map(record, BorrowRecordDTO.class);
     }
 
     public List<BorrowRecordDTO> getAll() {
@@ -145,5 +159,28 @@ public class BorrowRecordsService {
         return records.stream()
                 .map(record -> modelMapper.map(record, BorrowRecordDTO.class))
                 .toList();
+    }
+
+    public void adminReturnBook(Long borrowId) {
+
+        BorrowRecords borrowRecord = borrowRecordsRepository.findById(borrowId)
+                .orElseThrow(() ->
+                        new ReservationNotFoundException("Borrow record not found"));
+
+        // Check if already returned
+        if (borrowRecord.getStatus() == BorrowStatus.COMPLETED) {
+            throw new BadRequestExceptions("Book already returned");
+        }
+
+        // Update borrow status
+        borrowRecord.setStatus(BorrowStatus.COMPLETED);
+        borrowRecord.setUpdatedAt(LocalDate.now());
+
+        // Increase available copies
+        Book book = borrowRecord.getBook();
+        book.setAvailableCopies(book.getAvailableCopies() + 1);
+
+        bookRepository.save(book);
+        borrowRecordsRepository.save(borrowRecord);
     }
 }
