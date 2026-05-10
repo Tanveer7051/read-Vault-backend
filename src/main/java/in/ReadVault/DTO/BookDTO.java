@@ -20,4 +20,6 @@ public class BookDTO {
     private int totalCopies;
     private int availableCopies;
     private String imgUrl;
+    private String pdfurl;
+
 }
