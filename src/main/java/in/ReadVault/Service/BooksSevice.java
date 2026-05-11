@@ -173,21 +173,190 @@ public class BooksSevice {
             );
         }
     }
-//    public BookDTO updateBook(Long id, BookDTO bookDTO) {
-//
-//        Book book = bookRepository.findById(id)
-//                .orElseThrow(() -> new RuntimeException("Book not found"));
-//
-//        book.setTitle(bookDTO.getTitle());
-//        book.setAuthor(bookDTO.getAuthor());
-//        book.setCategory(bookDTO.getCategory());
-//        book.setQuantity(bookDTO.getQuantity());
-//        book.setDescription(bookDTO.getDescription());
-//
-//        Book updatedBook = bookRepository.save(book);
-//
-//        return mapToDTO(updatedBook);
-//    }
+    public BookDTO updateBook(
+            Long id,
+            AddBook addBook,
+            MultipartFile imageFile,
+            MultipartFile pdfFile
+    ) {
+
+        try {
+
+            Book book = bookRepository.findById(id)
+                    .orElseThrow(() ->
+                            new RuntimeException(
+                                    "Book not found with id : " + id
+                            )
+                    );
+
+            // =====================================================
+            // ✅ UPDATE COMMON FIELDS (ONLY IF PROVIDED)
+            // =====================================================
+
+            if (addBook.getTitle() != null &&
+                    !addBook.getTitle().trim().isEmpty()) {
+
+                book.setTitle(
+                        addBook.getTitle()
+                                .trim()
+                                .toUpperCase()
+                );
+            }
+
+            if (addBook.getAuthor() != null &&
+                    !addBook.getAuthor().trim().isEmpty()) {
+
+                book.setAuthor(
+                        addBook.getAuthor()
+                                .trim()
+                                .toUpperCase()
+                );
+            }
+
+            if (addBook.getCategory() != null) {
+                book.setCategory(addBook.getCategory());
+            }
+
+            if (addBook.getDescription() != null &&
+                    !addBook.getDescription().trim().isEmpty()) {
+
+                book.setDescription(
+                        addBook.getDescription()
+                );
+            }
+
+            // =====================================================
+            // ✅ IMAGE UPDATE (FOR BOTH TYPES)
+            // =====================================================
+
+            if (imageFile != null && !imageFile.isEmpty()) {
+
+                // Delete old image
+                if (book.getImagePublicId() != null &&
+                        !book.getImagePublicId().isEmpty()) {
+
+                    cloudinary.uploader().destroy(
+                            book.getImagePublicId(),
+                            Map.of("resource_type", "image")
+                    );
+                }
+
+                // Upload new image
+                Map<String, Object> imageUploadResult =
+                        cloudinary.uploader().upload(
+                                imageFile.getBytes(),
+                                Map.of("resource_type", "image")
+                        );
+
+                book.setImgUrl(
+                        imageUploadResult.get("secure_url").toString()
+                );
+
+                book.setImagePublicId(
+                        imageUploadResult.get("public_id").toString()
+                );
+            }
+
+            // =====================================================
+            // ✅ DIGITAL BOOK UPDATE
+            // =====================================================
+
+            if (book.getBookType() == BookType.DIGITAL) {
+
+                // Digital books should not have copies
+                book.setTotalCopies(0);
+                book.setAvailableCopies(0);
+
+                // Update PDF if new file uploaded
+                if (pdfFile != null && !pdfFile.isEmpty()) {
+
+                    // Delete old PDF
+                    if (book.getPdfPublicId() != null &&
+                            !book.getPdfPublicId().isEmpty()) {
+
+                        cloudinary.uploader().destroy(
+                                book.getPdfPublicId(),
+                                Map.of("resource_type", "raw")
+                        );
+                    }
+
+                    // Upload new PDF
+                    Map<String, Object> pdfUploadResult =
+                            cloudinary.uploader().upload(
+                                    pdfFile.getBytes(),
+                                    Map.of("resource_type", "raw")
+                            );
+
+                    book.setPdfurl(
+                            pdfUploadResult.get("secure_url").toString()
+                    );
+
+                    book.setPdfPublicId(
+                            pdfUploadResult.get("public_id").toString()
+                    );
+                }
+            }
+
+            // =====================================================
+            // ✅ PHYSICAL BOOK UPDATE
+            // =====================================================
+
+            else if (book.getBookType() == BookType.PHYSICAL) {
+
+                // Physical books cannot have PDF
+                if (pdfFile != null && !pdfFile.isEmpty()) {
+
+                    throw new PhysicalBookDoesNotHaveDigitalFile(
+                            "Physical books cannot have PDF"
+                    );
+                }
+
+                // Update copies only if provided
+                if (addBook.getTotalCopies() > 0) {
+
+                    int borrowedCopies =
+                            book.getTotalCopies()
+                                    - book.getAvailableCopies();
+
+                    if (addBook.getTotalCopies() < borrowedCopies) {
+
+                        throw new BadRequestExceptions(
+                                "Total copies cannot be less than borrowed copies"
+                        );
+                    }
+
+                    book.setTotalCopies(
+                            addBook.getTotalCopies()
+                    );
+
+                    // Recalculate available copies
+                    book.setAvailableCopies(
+                            addBook.getTotalCopies()
+                                    - borrowedCopies
+                    );
+                }
+            }
+
+            Book updatedBook = bookRepository.save(book);
+
+            return modelMapper.map(updatedBook, BookDTO.class);
+
+        } catch (PhysicalBookDoesNotHaveDigitalFile e) {
+
+            throw e;
+
+        } catch (BadRequestExceptions e) {
+
+            throw e;
+
+        } catch (Exception e) {
+
+            throw new RuntimeException(
+                    "Error while updating book : "
+                            + e.getMessage()
+            );
+        }
+    }
     public List<BookDTO> getAll() {
         List<Book> books = bookRepository.findAll();
         return books.stream()
