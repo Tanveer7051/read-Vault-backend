@@ -91,7 +91,8 @@ public class WebSecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
 
         configuration.setAllowedOrigins(List.of(
-                "https://read-vault-frontend.vercel.app"
+                "https://read-vault-frontend.vercel.app",
+                "http://localhost:3000"
         ));
 
         configuration.setAllowedMethods(List.of(
