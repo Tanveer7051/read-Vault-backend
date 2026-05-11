@@ -11,17 +11,16 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/book")
 public class BooksController {
 
     private final BooksSevice booksSevice;
-    private final ModelMapper modelMapper;
 
     public BooksController(BooksSevice booksSevice, ModelMapper modelMapper) {
         this.booksSevice = booksSevice;
-        this.modelMapper = modelMapper;
     }
 
     @PostMapping("/addbook")
@@ -30,13 +29,34 @@ public class BooksController {
                                            @RequestParam(value = "file", required = false) MultipartFile file) {
         return ResponseEntity.status(HttpStatus.CREATED).body(booksSevice.addBook(addBook, file, imageFile));
     }
-//    @PutMapping("/{id}")
-//    public ResponseEntity<BookDTO> updateBook(
-//            @PathVariable Long id,
-//            @RequestBody BookDTO bookDTO) {
-//
-//        return ResponseEntity.ok(bookService.updateBook(id, bookDTO));
-//    }
+    @PutMapping("/{id}")
+    public ResponseEntity<Map<String, Object>> updateBook(
+
+            @PathVariable Long id,
+
+            @ModelAttribute AddBook addBook,
+
+            @RequestParam(value = "imageFile", required = false)
+            MultipartFile imageFile,
+
+            @RequestParam(value = "pdfFile", required = false)
+            MultipartFile pdfFile
+    ) {
+
+        BookDTO updatedBook = booksSevice.updateBook(
+                id,
+                addBook,
+                imageFile,
+                pdfFile
+        );
+
+        return ResponseEntity.ok(
+                Map.of(
+                        "message", "Book updated successfully",
+                        "data", updatedBook
+                )
+        );
+    }
 
     @GetMapping("/all")
     public List<BookDTO> getAll() {
