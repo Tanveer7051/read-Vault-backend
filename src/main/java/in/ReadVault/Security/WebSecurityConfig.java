@@ -1,5 +1,7 @@
 package in.ReadVault.Security;
 
+
+import in.ReadVault.Config.AppConfig;
 import in.ReadVault.Filter.JwtFilter;
 import in.ReadVault.GlobalExceptionHandling.CustomAccessDeniedHandler;
 import in.ReadVault.GlobalExceptionHandling.JwtAuthEntryPoint;
@@ -12,7 +14,6 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import in.ReadVault.Config.AppConfig;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -46,7 +47,7 @@ public class WebSecurityConfig {
 
                 .authorizeHttpRequests(auth -> auth
 
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+//                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                                 // PUBLIC
                                 .requestMatchers("/auth/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/user/all").hasRole("ADMIN")
@@ -74,7 +75,6 @@ public class WebSecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/reservations/*/cancel").hasAnyRole("ADMIN", "USER")
                         .requestMatchers(HttpMethod.DELETE, "/api/reservations/**").hasRole("ADMIN")
 
-                                // ANY OTHER
                                 .anyRequest().authenticated()
                 )
 
@@ -87,20 +87,30 @@ public class WebSecurityConfig {
     }
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
+
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // 1. THIS IS THE CRITICAL CHANGE
-        configuration.setAllowedOriginPatterns(List.of("*"));
+        configuration.setAllowedOrigins(List.of(
+                "https://read-vault-frontend.vercel.app"
+        ));
 
-        // Allow all methods and headers
-        configuration.setAllowedMethods(List.of("*"));
+        configuration.setAllowedMethods(List.of(
+                "GET",
+                "POST",
+                "PUT",
+                "DELETE",
+                "OPTIONS"
+        ));
+
         configuration.setAllowedHeaders(List.of("*"));
 
-        // Crucial for authorization Tokens / Cookies
         configuration.setAllowCredentials(true);
 
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        UrlBasedCorsConfigurationSource source =
+                new UrlBasedCorsConfigurationSource();
+
         source.registerCorsConfiguration("/**", configuration);
+
         return source;
     }
 }

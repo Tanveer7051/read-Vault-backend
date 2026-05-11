@@ -30,6 +30,13 @@ public class BooksController {
                                            @RequestParam(value = "file", required = false) MultipartFile file) {
         return ResponseEntity.status(HttpStatus.CREATED).body(booksSevice.addBook(addBook, file, imageFile));
     }
+//    @PutMapping("/{id}")
+//    public ResponseEntity<BookDTO> updateBook(
+//            @PathVariable Long id,
+//            @RequestBody BookDTO bookDTO) {
+//
+//        return ResponseEntity.ok(bookService.updateBook(id, bookDTO));
+//    }
 
     @GetMapping("/all")
     public List<BookDTO> getAll() {

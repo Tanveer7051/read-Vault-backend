@@ -21,5 +21,4 @@ public class BookDTO {
     private int availableCopies;
     private String imgUrl;
     private String pdfurl;
-
 }

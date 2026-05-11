@@ -173,6 +173,21 @@ public class BooksSevice {
             );
         }
     }
+//    public BookDTO updateBook(Long id, BookDTO bookDTO) {
+//
+//        Book book = bookRepository.findById(id)
+//                .orElseThrow(() -> new RuntimeException("Book not found"));
+//
+//        book.setTitle(bookDTO.getTitle());
+//        book.setAuthor(bookDTO.getAuthor());
+//        book.setCategory(bookDTO.getCategory());
+//        book.setQuantity(bookDTO.getQuantity());
+//        book.setDescription(bookDTO.getDescription());
+//
+//        Book updatedBook = bookRepository.save(book);
+//
+//        return mapToDTO(updatedBook);
+//    }
     public List<BookDTO> getAll() {
         List<Book> books = bookRepository.findAll();
         return books.stream()
