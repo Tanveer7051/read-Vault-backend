@@ -24,7 +24,7 @@ public class AuthController {
 
     private final AuthService authService;
 
-    Logger logger = LoggerFactory.getLogger(AuthController.class);
+    private final Logger logger = LoggerFactory.getLogger(AuthController.class);
 
     @PostMapping(value = "/register", produces = "application/json")
     public ResponseEntity<Map<String, String>> addUser(

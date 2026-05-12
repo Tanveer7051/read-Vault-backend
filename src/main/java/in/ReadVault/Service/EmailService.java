@@ -22,7 +22,7 @@ import java.util.Optional;
 public class EmailService {
     private final EmailRepository emailRepository;
     private final JavaMailSender javaMailSender;
-    Logger logger = LoggerFactory.getLogger(EmailService.class);
+    private final Logger logger = LoggerFactory.getLogger(EmailService.class);
     public void generateOtp(EmailVerification emailVerificationEntity) {
 
         long otp = 100000 + (long) (Math.random() * 900000);
