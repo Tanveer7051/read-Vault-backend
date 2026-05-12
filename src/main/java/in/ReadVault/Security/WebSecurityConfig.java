@@ -91,6 +91,7 @@ public class WebSecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
 
         configuration.setAllowedOrigins(List.of(
+                "https://read-vault-umber.vercel.app",
                 "http://localhost:3000"
         ));
 
