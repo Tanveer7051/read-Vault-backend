@@ -34,14 +34,14 @@ public class AuthController {
         );
     }
 
-    @PostMapping("/verify")
-    public ResponseEntity<UserDTO> verifyOtp(@RequestBody VerifyOtpDTO verifyOtpDTO
-                                             ) {
-
-        return ResponseEntity.ok(
-                authService.verifyAndCreateUser(verifyOtpDTO)
-        );
-    }
+//    @PostMapping("/verify")
+//    public ResponseEntity<UserDTO> verifyOtp(@RequestBody VerifyOtpDTO verifyOtpDTO
+//                                             ) {
+//
+//        return ResponseEntity.ok(
+//                authService.verifyAndCreateUser(verifyOtpDTO)
+//        );
+//    }
 
     @PostMapping("/login")
     public ResponseLoginDTO login(

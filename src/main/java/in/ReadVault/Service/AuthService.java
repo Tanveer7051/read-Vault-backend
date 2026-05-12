@@ -1,13 +1,11 @@
 package in.ReadVault.Service;
 
 import in.ReadVault.DTO.*;
-import in.ReadVault.Entity.EmailVerification;
 import in.ReadVault.Entity.Role;
 import in.ReadVault.Entity.User;
 import in.ReadVault.GlobalExceptionHandling.BadRequestExceptions;
 import in.ReadVault.GlobalExceptionHandling.UserAlreadyRegisteredException;
 import in.ReadVault.GlobalExceptionHandling.UserNotFoundException;
-import in.ReadVault.Repository.EmailRepository;
 import in.ReadVault.Repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -27,8 +25,8 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final AuthenticationManager authenticationManager;
     private final JwtTokenService jwtTokenService;
-    private final EmailService emailService;
-    private final EmailRepository emailRepository;
+//    private final EmailService emailService;
+//    private final EmailRepository emailRepository;
 
     public String addUser(SignUpDTO signUpDTO) {
 
@@ -44,59 +42,80 @@ public class AuthService {
             );
         }
 
-        EmailVerification emailVerificationEntity = new EmailVerification();
+//        EmailVerification emailVerificationEntity = new EmailVerification();
+//
+//        emailVerificationEntity.setFirstname(signUpDTO.getFirstname());
+//        emailVerificationEntity.setLastname(signUpDTO.getLastname());
+//        emailVerificationEntity.setUsername(signUpDTO.getUsername());
+//        emailVerificationEntity.setEmail(signUpDTO.getEmail());
+//
+//        emailVerificationEntity.setPassword(
+//                passwordEncoder.encode(signUpDTO.getPassword())
+//        );
 
-        emailVerificationEntity.setFirstname(signUpDTO.getFirstname());
-        emailVerificationEntity.setLastname(signUpDTO.getLastname());
-        emailVerificationEntity.setUsername(signUpDTO.getUsername());
-        emailVerificationEntity.setEmail(signUpDTO.getEmail());
+//        emailVerificationEntity.setRole(
+//                signUpDTO.getRole() != null
+//                        ? signUpDTO.getRole()
+//                        : Role.USER
+//        );
 
-        emailVerificationEntity.setPassword(
+//        emailService.generateOtp(emailVerificationEntity);
+
+//        return "OTP sent successfully to your email";
+
+        User user = new User();
+
+        user.setFirstname(signUpDTO.getFirstname());
+        user.setLastname(signUpDTO.getLastname());
+        user.setUsername(signUpDTO.getUsername());
+        user.setEmail(signUpDTO.getEmail());
+
+        user.setPassword(
                 passwordEncoder.encode(signUpDTO.getPassword())
         );
 
-        emailVerificationEntity.setRole(
+        user.setRole(
                 signUpDTO.getRole() != null
                         ? signUpDTO.getRole()
                         : Role.USER
         );
 
-        emailService.generateOtp(emailVerificationEntity);
+        userRepository.save(user);
 
-        return "OTP sent successfully to your email";
+        return "User registered successfully";
     }
 
-    public UserDTO verifyAndCreateUser(VerifyOtpDTO verifyOtpDTO) {
-
-        EmailVerification emailVerificationEntity = emailRepository.findByEmail(verifyOtpDTO.getEmail())
-                .orElseThrow(() ->
-                        new BadRequestExceptions("Email not found")
-                );
-
-        boolean verified = emailService.verifyOtp(verifyOtpDTO.getEmail(), verifyOtpDTO.getOtp());
-
-        if (!verified) {
-            throw new BadRequestExceptions(
-                    "Invalid or expired OTP"
-            );
-        }
-
-        User user = new User();
-
-        user.setFirstname(emailVerificationEntity.getFirstname());
-        user.setLastname(emailVerificationEntity.getLastname());
-        user.setUsername(emailVerificationEntity.getUsername());
-        user.setEmail(emailVerificationEntity.getEmail());
-        user.setPassword(emailVerificationEntity.getPassword());
-        user.setRole(emailVerificationEntity.getRole());
-
-        User savedUser = userRepository.save(user);
-
-        emailRepository.delete(emailVerificationEntity);
-        emailService.sendWelcomeMail(user.getEmail(),user.getFirstname(),user.getLastname());
-
-        return modelMapper.map(savedUser, UserDTO.class);
-    }
+//    public UserDTO verifyAndCreateUser(VerifyOtpDTO verifyOtpDTO) {
+//
+//        EmailVerification emailVerificationEntity = emailRepository.findByEmail(verifyOtpDTO.getEmail())
+//                .orElseThrow(() ->
+//                        new BadRequestExceptions("Email not found")
+//                );
+//
+//        boolean verified = emailService.verifyOtp(verifyOtpDTO.getEmail(), verifyOtpDTO.getOtp());
+//
+//        if (!verified) {
+//            throw new BadRequestExceptions(
+//                    "Invalid or expired OTP"
+//            );
+//        }
+//
+//        User user = new User();
+//
+//        user.setFirstname(emailVerificationEntity.getFirstname());
+//        user.setLastname(emailVerificationEntity.getLastname());
+//        user.setUsername(emailVerificationEntity.getUsername());
+//        user.setEmail(emailVerificationEntity.getEmail());
+//        user.setPassword(emailVerificationEntity.getPassword());
+//        user.setRole(emailVerificationEntity.getRole());
+//
+//        User savedUser = userRepository.save(user);
+//
+//        emailRepository.delete(emailVerificationEntity);
+//        emailService.sendWelcomeMail(user.getEmail(),user.getFirstname(),user.getLastname());
+//
+//        return modelMapper.map(savedUser, UserDTO.class);
+//    }
 
     public ResponseLoginDTO login(LoginRequestDTO loginRequestDTO) {
 
