@@ -40,6 +40,28 @@ public class UserService implements UserDetailsService {
         return modelMapper.map(user, UserDTO.class);
     }
 
+    public UserDTO toggleUserRole(Long userId) {
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() ->
+                        new RuntimeException("User not found")
+                );
+
+        // ❌ Prevent degrading admin
+        if (user.getRole() == Role.ADMIN) {
+
+            throw new BadRequestExceptions(
+                    "Cannot degrade admin to user"
+            );
+        }
+
+        // ✅ Upgrade USER → ADMIN
+        user.setRole(Role.ADMIN);
+
+        User updatedUser = userRepository.save(user);
+
+        return modelMapper.map(updatedUser, UserDTO.class);
+    }
     public List<UserDTO> getAllUser() {
 
         List<User> users = userRepository.findAll();
@@ -101,19 +123,16 @@ public class UserService implements UserDetailsService {
             user.setUsername(updateUserDTO.getUsername());
         }
 
-        // PROFILE IMAGE
         if (image != null && !image.isEmpty()) {
 
             try {
 
-                // VALIDATE IMAGE
                 if (!image.getContentType().startsWith("image/")) {
 
                     throw new BadRequestExceptions(
                             "Only image files are allowed");
                 }
 
-                // DELETE OLD IMAGE FROM CLOUDINARY
                 if (user.getProfileImagePublicId() != null &&
                         !user.getProfileImagePublicId().isEmpty()) {
 
@@ -158,10 +177,15 @@ public class UserService implements UserDetailsService {
                         new UserNotFoundException(
                                 "User Not Found With This Id : "
                                         + userId));
+        if (user.getRole().equals(Role.ADMIN)) {
+
+            throw new BadRequestExceptions(
+                    "Admin cannot be deleted"
+            );
+        }
 
         try {
 
-            // DELETE PROFILE IMAGE FROM CLOUDINARY
             if (user.getProfileImagePublicId() != null &&
                     !user.getProfileImagePublicId().isEmpty()) {
 
