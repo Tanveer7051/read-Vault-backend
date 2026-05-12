@@ -94,7 +94,6 @@ public class WebSecurityConfig {
                 "https://read-vault-mocha.vercel.app/",
                 "http://localhost:3000"
         ));
-
         configuration.setAllowedMethods(List.of(
                 "GET",
                 "POST",
