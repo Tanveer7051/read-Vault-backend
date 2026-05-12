@@ -1,5 +1,6 @@
 package in.ReadVault.DTO;
 
+import in.ReadVault.Entity.Role;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -14,4 +15,5 @@ public class UserDTO {
     private String username;
     private String email;
     private String profileImage;
+    private Role role;
 }
