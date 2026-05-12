@@ -4,7 +4,6 @@ import in.ReadVault.Entity.EmailVerification;
 import in.ReadVault.Repository.EmailRepository;
 import jakarta.mail.internet.MimeMessage;
 import lombok.AllArgsConstructor;
-import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -434,7 +433,7 @@ public class EmailService {
         }
     }
 
-    @Scheduled(fixedRate = 86400000) // every 5 minutes
+    @Scheduled(fixedRate = 86400000)
     public void deleteExpiredOtps() {
 
         List<EmailVerification> expiredEmailVerifications = emailRepository
