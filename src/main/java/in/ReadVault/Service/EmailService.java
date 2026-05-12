@@ -1,13 +1,9 @@
 package in.ReadVault.Service;
 
-import in.ReadVault.Controller.AuthController;
 import in.ReadVault.Entity.EmailVerification;
 import in.ReadVault.Repository.EmailRepository;
-import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.AllArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -22,7 +18,7 @@ import java.util.Optional;
 public class EmailService {
     private final EmailRepository emailRepository;
     private final JavaMailSender javaMailSender;
-    private final Logger logger = LoggerFactory.getLogger(EmailService.class);
+
     public void generateOtp(EmailVerification emailVerificationEntity) {
 
         long otp = 100000 + (long) (Math.random() * 900000);
@@ -69,7 +65,7 @@ public class EmailService {
     private void sendOtpMail(String email, long otp) {
 
         try {
-            logger.info("Inside emailService {}---{}",otp,email);
+
             MimeMessage message = javaMailSender.createMimeMessage();
 
             MimeMessageHelper helper =
@@ -219,11 +215,10 @@ public class EmailService {
 
             helper.setText(html, true);
 
-            logger.info("Email ready to send user in box");
             javaMailSender.send(message);
-            logger.info("Email send to user successfully");
-        } catch (MessagingException e) {
-            logger.warn("error : {}",e.getMessage());
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 

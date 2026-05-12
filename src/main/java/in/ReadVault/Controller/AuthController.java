@@ -8,8 +8,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -24,13 +22,11 @@ public class AuthController {
 
     private final AuthService authService;
 
-    private final Logger logger = LoggerFactory.getLogger(AuthController.class);
-
     @PostMapping(value = "/register", produces = "application/json")
     public ResponseEntity<Map<String, String>> addUser(
             @Valid @RequestBody SignUpDTO signUpDTO
     ) {
-        logger.info("request invoked");
+
         String message = authService.addUser(signUpDTO);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(
