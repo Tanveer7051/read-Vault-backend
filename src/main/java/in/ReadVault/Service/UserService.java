@@ -47,7 +47,6 @@ public class UserService implements UserDetailsService {
                         new RuntimeException("User not found")
                 );
 
-        // ❌ Prevent degrading admin
         if (user.getRole() == Role.ADMIN) {
 
             throw new BadRequestExceptions(
@@ -55,7 +54,6 @@ public class UserService implements UserDetailsService {
             );
         }
 
-        // ✅ Upgrade USER → ADMIN
         user.setRole(Role.ADMIN);
 
         User updatedUser = userRepository.save(user);

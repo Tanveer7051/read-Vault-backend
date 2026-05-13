@@ -168,7 +168,7 @@ public class BooksSevice {
 
         } catch (Exception e) {
 
-            throw new RuntimeException(
+            throw new BadRequestExceptions(
                     "Error while adding book: " + e.getMessage()
             );
         }
