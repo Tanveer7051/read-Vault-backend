@@ -91,4 +91,8 @@ public class AuthController {
                 authService.refresh(refreshToken)
         );
     }
+    @GetMapping("/health")
+    public String health() {
+        return "OK";
+    }
 }
