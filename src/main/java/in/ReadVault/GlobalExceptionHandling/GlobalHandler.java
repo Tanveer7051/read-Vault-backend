@@ -19,7 +19,8 @@ public class GlobalHandler {
             UserNotFoundException.class,
             BookNotFoundException.class,
             ReservationNotFoundException.class,
-            NoRecordFoundException.class
+            NoRecordFoundException.class,
+            ReviewNotFoundException.class
     })
     public ResponseEntity<ErrorResponse> handleNotFound(RuntimeException ex) {
         return buildResponse(ex.getMessage(), HttpStatus.NOT_FOUND);
@@ -41,7 +42,8 @@ public class GlobalHandler {
             BookAlreadyExistException.class,
             DigitalBookDoesNotHaveCopiesException.class,
             BadRequestExceptions.class,
-            DigitalBookMustHavePdfException.class
+            DigitalBookMustHavePdfException.class,
+            YouAlreadyReviewedThisBookException.class
     })
     public ResponseEntity<ErrorResponse> handleConflict(RuntimeException ex) {
         return buildResponse(ex.getMessage(), HttpStatus.CONFLICT);
