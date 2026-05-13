@@ -36,4 +36,6 @@ public class Book {
     @JsonManagedReference(value = "book-borrow")
     @OneToMany(mappedBy = "book")
     private List<BorrowRecords> borrowRecords= new ArrayList<>();
+    @OneToMany(mappedBy = "book", cascade = CascadeType.ALL)
+    private List<Review> reviews;
 }
