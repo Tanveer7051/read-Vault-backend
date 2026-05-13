@@ -75,6 +75,16 @@ public class WebSecurityConfig {
                         .requestMatchers(HttpMethod.PUT, "/api/reservations/*/cancel").hasAnyRole("ADMIN", "USER")
                         .requestMatchers(HttpMethod.DELETE, "/api/reservations/**").hasRole("ADMIN")
 
+
+                        //Reviews
+                        .requestMatchers(HttpMethod.POST, "/api/reviews/**")
+                        .hasRole("USER")
+
+                        .requestMatchers(HttpMethod.GET, "/api/reviews/**")
+                        .permitAll()
+
+                        .requestMatchers(HttpMethod.DELETE, "/api/reviews/**")
+                        .hasAnyRole("ADMIN", "USER")
                                 .anyRequest().authenticated()
                 )
 
