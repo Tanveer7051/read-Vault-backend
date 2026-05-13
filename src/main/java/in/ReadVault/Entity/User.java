@@ -51,6 +51,8 @@ public class User implements UserDetails {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     private List<Review> reviews;
 
+    @OneToMany(mappedBy = "publishedBy")
+    private List<Book> publishedBooks;
     @Override
     public String getUsername() {
         return username;

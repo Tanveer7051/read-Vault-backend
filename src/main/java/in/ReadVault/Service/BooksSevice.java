@@ -6,9 +6,13 @@ import in.ReadVault.DTO.BookDTO;
 import in.ReadVault.Entity.BookType;
 import in.ReadVault.Entity.Book;
 import in.ReadVault.Entity.Category;
+import in.ReadVault.Entity.User;
 import in.ReadVault.GlobalExceptionHandling.*;
 import in.ReadVault.Repository.BookRepository;
+import in.ReadVault.Repository.UserRepository;
 import org.modelmapper.ModelMapper;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -22,18 +26,27 @@ public class BooksSevice {
 
     private final BookRepository bookRepository;
     private final Cloudinary cloudinary;
-    private final ModelMapper modelMapper;
+    private final UserRepository userRepository;
 
-    public BooksSevice(BookRepository bookRepository, Cloudinary cloudinary, ModelMapper modelMapper) {
+    public BooksSevice(BookRepository bookRepository, Cloudinary cloudinary, ModelMapper modelMapper, UserRepository userRepository) {
         this.bookRepository = bookRepository;
         this.cloudinary = cloudinary;
-        this.modelMapper = modelMapper;
+        this.userRepository = userRepository;
     }
 
     public BookDTO addBook(AddBook addBook, MultipartFile pdfFile, MultipartFile imgUrl) {
 
-        try {
+        User authUser = (User) SecurityContextHolder
+                .getContext()
+                .getAuthentication()
+                .getPrincipal();
 
+        User currentAdmin = userRepository.findById(authUser.getId())
+                .orElseThrow(() ->
+                        new RuntimeException("User not found")
+                );
+
+        try {
             if (addBook.getBookType() == null) {
                 throw new BookNotFoundException("Book type is required");
             }
@@ -73,8 +86,12 @@ public class BooksSevice {
             String publicImgUrl = imageUpload.get("public_id").toString();
 
             Book book = new Book();
-
             book.setTitle(title);
+            System.out.println(currentAdmin);
+            System.out.println(currentAdmin.getId());
+            System.out.println(currentAdmin.getUsername());
+            book.setPublishedBy(currentAdmin);
+
             book.setAuthor(author);
             book.setCategory(addBook.getCategory());
             book.setDescription(addBook.getDescription());
@@ -104,7 +121,6 @@ public class BooksSevice {
                             "Only PDF files are allowed"
                     );
                 }
-
                 // Upload PDF
                 Map<String, Object> pdfUpload = cloudinary.uploader().upload(
                         pdfFile.getBytes(),
@@ -148,6 +164,7 @@ public class BooksSevice {
 
             BookDTO dto = new BookDTO();
 
+            dto.setPublishedBy(currentAdmin.getFirstname() + " " + currentAdmin.getLastname());
             dto.setId(savedBook.getId());
             dto.setTitle(savedBook.getTitle());
             dto.setAuthor(savedBook.getAuthor());
@@ -189,9 +206,6 @@ public class BooksSevice {
                             )
                     );
 
-            // =====================================================
-            // ✅ UPDATE COMMON FIELDS (ONLY IF PROVIDED)
-            // =====================================================
 
             if (addBook.getTitle() != null &&
                     !addBook.getTitle().trim().isEmpty()) {
@@ -225,10 +239,6 @@ public class BooksSevice {
                 );
             }
 
-            // =====================================================
-            // ✅ IMAGE UPDATE (FOR BOTH TYPES)
-            // =====================================================
-
             if (imageFile != null && !imageFile.isEmpty()) {
 
                 // Delete old image
@@ -257,9 +267,6 @@ public class BooksSevice {
                 );
             }
 
-            // =====================================================
-            // ✅ DIGITAL BOOK UPDATE
-            // =====================================================
 
             if (book.getBookType() == BookType.DIGITAL) {
 
@@ -297,9 +304,6 @@ public class BooksSevice {
                 }
             }
 
-            // =====================================================
-            // ✅ PHYSICAL BOOK UPDATE
-            // =====================================================
 
             else if (book.getBookType() == BookType.PHYSICAL) {
 
@@ -329,7 +333,6 @@ public class BooksSevice {
                             addBook.getTotalCopies()
                     );
 
-                    // Recalculate available copies
                     book.setAvailableCopies(
                             addBook.getTotalCopies()
                                     - borrowedCopies
@@ -339,7 +342,7 @@ public class BooksSevice {
 
             Book updatedBook = bookRepository.save(book);
 
-            return modelMapper.map(updatedBook, BookDTO.class);
+            return mapToDTO(updatedBook);
 
         } catch (PhysicalBookDoesNotHaveDigitalFile e) {
 
@@ -360,7 +363,7 @@ public class BooksSevice {
     public List<BookDTO> getAll() {
         List<Book> books = bookRepository.findAll();
         return books.stream()
-                .map(book -> modelMapper.map(book, BookDTO.class))
+                .map(this::mapToDTO)
                 .toList();
     }
 
@@ -368,7 +371,7 @@ public class BooksSevice {
 
         Book book = bookRepository.findById(bookId)
                 .orElseThrow(() -> new BookNotFoundException("Book Not Found With This ID : " + bookId));
-        return modelMapper.map(book, BookDTO.class);
+        return mapToDTO(book);
     }
 
     public String deleteBook(Long bookId) {
@@ -409,7 +412,7 @@ public class BooksSevice {
         }
         List<Book> books = bookRepository.findByTitleContainingIgnoreCase(title);
         return books.stream()
-                .map(book -> modelMapper.map(book, BookDTO.class))
+                .map(this::mapToDTO)
                 .toList();
     }
 
@@ -436,8 +439,38 @@ public class BooksSevice {
         }
 
         return books.stream()
-                .map(book -> modelMapper.map(book, BookDTO.class))
+                .map(this::mapToDTO)
                 .toList();
+    }
+
+    private BookDTO mapToDTO(Book book) {
+
+        BookDTO dto = new BookDTO();
+
+        dto.setId(book.getId());
+        dto.setTitle(book.getTitle());
+        dto.setAuthor(book.getAuthor());
+        dto.setCategory(book.getCategory());
+        dto.setDescription(book.getDescription());
+
+        dto.setBookType(book.getBookType());
+
+        dto.setTotalCopies(book.getTotalCopies());
+        dto.setAvailableCopies(book.getAvailableCopies());
+
+        dto.setImgUrl(book.getImgUrl());
+        dto.setPdfurl(book.getPdfurl());
+
+        if (book.getPublishedBy() != null) {
+
+            dto.setPublishedBy(
+                    book.getPublishedBy().getFirstname()
+                            + " " +
+                            book.getPublishedBy().getLastname()
+            );
+        }
+
+        return dto;
     }
 
 }

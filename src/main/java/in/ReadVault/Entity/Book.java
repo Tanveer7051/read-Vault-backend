@@ -38,4 +38,8 @@ public class Book {
     private List<BorrowRecords> borrowRecords= new ArrayList<>();
     @OneToMany(mappedBy = "book", cascade = CascadeType.ALL)
     private List<Review> reviews;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "published_by")
+    private User publishedBy;
 }
