@@ -43,7 +43,7 @@ public class BooksSevice {
 
         User currentAdmin = userRepository.findById(authUser.getId())
                 .orElseThrow(() ->
-                        new RuntimeException("User not found")
+                        new UserNotFoundException("User not found")
                 );
 
         try {
@@ -354,7 +354,7 @@ public class BooksSevice {
 
         } catch (Exception e) {
 
-            throw new RuntimeException(
+            throw new BadRequestExceptions(
                     "Error while updating book : "
                             + e.getMessage()
             );
